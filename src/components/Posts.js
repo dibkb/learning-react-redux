@@ -1,25 +1,33 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { selectAllPosts } from "../features/posts/postSlice";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  selectAllPosts,
+  getPostsStatus,
+  getPostsError,
+  fetchPosts,
+} from "../features/posts/postSlice";
+import { SinglePost } from "./SinglePost";
 const Posts = () => {
-  const Posts = useSelector(selectAllPosts);
-  const postsData = Posts.map((ele, id) => {
-    return (
-      <article
-        style={{
-          border: "1px solid #eeeeee",
-          borderRadius: "3px",
-          marginBottom: "1rem",
-          padding: "1rem",
-        }}
-        key={String(id)}
-      >
-        <h3>{ele.title}</h3>
-        <p>{ele.content}</p>
-      </article>
-    );
-  });
-  return <div>{postsData}</div>;
+  const dispatch = useDispatch();
+  const posts = useSelector(selectAllPosts);
+  const status = useSelector(getPostsStatus);
+  const error = useSelector(getPostsError);
+  useEffect(() => {
+    if (status === "idle") {
+      dispatch(fetchPosts());
+    }
+  }, [status, dispatch]);
+  let content;
+  if (status === "succeeded") {
+    content = posts.map((ele, id) => {
+      return <SinglePost key={id} post={ele} />;
+    });
+  } else if (status === "loading") {
+    content = <p>Loading .......</p>;
+  } else if (status === "failed") {
+    content = <p>{error}</p>;
+  }
+  return <div>{content}</div>;
 };
 
 export default Posts;

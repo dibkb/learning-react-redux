@@ -1,24 +1,16 @@
-import { createSlice, nanoid } from "@reduxjs/toolkit";
-const initialValue = [
-  {
-    id: "1",
-    title: "Learning Redux Toolkit",
-    content: "I've heard good things.",
-    reactions: {
-      like: 0,
-      fire: 0,
-    },
-  },
-  {
-    id: "2",
-    title: "Learning NodeJS",
-    content: "This is the bomb",
-    reactions: {
-      like: 0,
-      fire: 0,
-    },
-  },
-];
+import { createAsyncThunk, createSlice, nanoid } from "@reduxjs/toolkit";
+const POSTS_URL = "https://jsonplaceholder.typicode.com/posts";
+export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
+  const response = await fetch(POSTS_URL);
+  const data = await response.json();
+  return data;
+});
+const initialValue = {
+  posts: [],
+  // idle | loading | succeeded | failed
+  status: "idle",
+  error: null,
+};
 export const postSlice = createSlice({
   name: "posts",
   initialState: initialValue,
@@ -38,7 +30,22 @@ export const postSlice = createSlice({
       },
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(fetchPosts.pending, (state, action) => {
+      state.status = "loading";
+    });
+    builder.addCase(fetchPosts.fulfilled, (state, action) => {
+      state.status = "succeeded";
+      state.posts = state.posts.concat(action.payload);
+    });
+    builder.addCase(fetchPosts.rejected, (state, action) => {
+      state.status = "failed";
+      state.error = action.error.message;
+    });
+  },
 });
-export const selectAllPosts = (state) => state.posts;
+export const selectAllPosts = (state) => state.posts.posts;
+export const getPostsStatus = (state) => state.posts.status;
+export const getPostsError = (state) => state.posts.error;
 export const { postAdded } = postSlice.actions;
 export default postSlice.reducer;
